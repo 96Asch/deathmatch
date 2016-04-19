@@ -1,0 +1,18 @@
+use UTbot as knowledge.
+
+module UTbotInit {
+	% Initially, we are going nowhere.
+	if true then insert(navigation(none, none)).
+
+	% Store all navpoints in the map.
+	forall percept(navPoint(UnrealID,_,_)) do insert(navPoint(UnrealID)).
+
+	% Store all navpoints where weapons can be found.
+	forall percept(pickup(UnrealID,Label,ItemType)) do insert(pickup(UnrealID,Label,ItemType)).
+
+	% Store information about the bot itself.
+	if percept(self(UnrealID,Nickname,Team)) then insert(self(UnrealID,Nickname,Team)).
+
+	% Store information about the location of the flag base
+	if percept(flag(Team,UnrealID)) then insert(flag(Team,UnrealID)).
+}
