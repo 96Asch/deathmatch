@@ -4,3 +4,8 @@ use UTbot as knowledge.
 define navigate(Destination) with
 	pre{ not(navigation(navigating,_)) }
 	post{ true }
+
+% Respawn if the agent is not traveling.
+define respawn with
+	pre{true}
+	post{respawn}

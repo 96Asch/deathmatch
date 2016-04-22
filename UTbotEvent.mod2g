@@ -10,4 +10,46 @@ module UTbotEvent {
 	% If we have no goal yet, pick a random navPoint as our goal.
 	% Note that it may be unreachable; this example does not handle that.
 	if not(goal(at(_))), bel(navPoint(Target)) then adopt(at(Target)).
+
+	% If the agent changes their armor then its belief will change accordingly (send on change).
+	if bel(armor(OldHelmet,OldVest,OldThighpad,OldShieldbelt)), percept(armor(Helmet,Vest,Thighpad,Shieldbelt))
+		then delete(armor(OldHelmet,OldVest,OldThighpad,OldShieldbelt)) + insert(armor(Helmet,Vest,Thighpad,Shieldbelt)).
+
+	% Changes the goalscore and time limit according to the current goal score and time limit (send on change).
+	if bel(game(Gametype,Map,OldGoalScore,OldTimeLimit)), percept(game(Gametype,Map,GoalScore,TimeLimit))
+		then delete(game(Gametype,Map,OldGoalScore,OldTimeLimit)) + insert(game(Gametype,Map,GoalScore,TimeLimit)).
+
+	% Changes the belief of where the agent is if the agent is in another location.
+	if bel(orientation(OldLocation,OldRotation,OldVelocity)), percept(orientation(Location,Rotation,Velocity))
+		then delete(orientation(OldLocation,OldRotation,OldVelocity)) + insert(orientation(Location,Rotation,Velocity)).
+
+	% Changes the status of the agent when it something happens to the agent.
+	if bel(status(OldHealth,OldArmour,OldAdrenaline,OldCombo)), percept(status(Health,Armour,Adrenaline,Combo))
+		then delete(status(OldHealth,OldArmour,OldAdrenaline,OldCombo)) + insert(status(Health,Armour,Adrenaline,Combo)).
+
+	% Updates the score of the game for the agent.
+	if bel(score(OldTotalKills,OldTotalDeaths,OldTotalSuicides)), percept(score(TotalKills,TotalDeaths,TotalSuicides))
+		then delete(score(OldTotalKills,OldTotalDeaths,OldTotalSuicides)) + insert(score(TotalKills,TotalDeaths,TotalSuicides)).
+
+	% Changes the information of the weapon the agent is holding if the agents switches weapons.
+	if bel(currentWeapon(OldWeaponType,OldFireMode)), percept(currentWeapon(WeaponType,FireMode))
+		then delete(currentWeapon(OldWeaponType,OldFireMode)) + insert(currentWeapon(WeaponType,FireMode)).
+
+	% Gives information about the duration of the udamage effect.
+	if percept(udamage(Ttime)) then insert(udamage(Ttime)).
+
+	% Updates the information of the powerup.
+	if bel(powerup(OldType,OldDuration)), percept(powerup(Type,Duration))
+		then delete(powerup(OldType,OldDuration)) + insert(powerup(Type,Duration)).
+
+	if bel(respawn) then delete(respawn).
+
+	% If the agent is stuck then resolve the situation by respawning the agent.
+	if bel(navigation(stuck,Destination)) then adopt(respawn).
+
+	% If the agent sees no path to a certain location then the agent drops the current goal and adopt another
+	% destination
+	if bel(navigation(noPath,Destination)), bel(navPoint(NewDestination)) then drop(at(Destination)) + adopt(at(NewDestination)).
+
+
 }
