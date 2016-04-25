@@ -9,3 +9,8 @@ define navigate(Destination) with
 define respawn with
 	pre{true}
 	post{respawn}
+
+% Deploy a weapon if it's deployable.
+define deploy with
+	pre{currentWeapon(Weapon,Firemode)}
+	post{true}

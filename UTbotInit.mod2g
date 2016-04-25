@@ -16,7 +16,7 @@ module UTbotInit {
 	if percept(flag(Team,UnrealID)) then insert(flag(Team,UnrealID)).
 
 	% Store initially what the agent is wearing in terms of armor parts.
-	if percept(armor(Armor,Helmet,Vest,Thighpad,Shieldbelt)) then insert(armor(Helmet,Vest,Thighpad,Shieldbelt)).
+	if percept(armor(Helmet,Vest,Thighpad,Shieldbelt)) then insert(armor(Helmet,Vest,Thighpad,Shieldbelt)).
 
 	% Record initially what type of game the agents are playing.
 	if percept(game(Gametype,Map,GoalScore,TimeLimit)) then insert(game(Gametype,Map,GoalScore,TimeLimit)).

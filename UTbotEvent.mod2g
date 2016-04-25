@@ -35,21 +35,81 @@ module UTbotEvent {
 	if bel(currentWeapon(OldWeaponType,OldFireMode)), percept(currentWeapon(WeaponType,FireMode))
 		then delete(currentWeapon(OldWeaponType,OldFireMode)) + insert(currentWeapon(WeaponType,FireMode)).
 
+	% Stores the information about which weapons the agent is currently holding in it's inventory
+	forall percept(weapon(WeaponType,Ammo,AltAmmo)) do insert(weapon(WeaponType,Ammo,AltAmmo)).
+	forall percept(not(weapon(WeaponType,Ammo,AltAmmo))) do delete(weapon(WeaponType,Ammo,AltAmmo)).
+
 	% Gives information about the duration of the udamage effect.
 	if percept(udamage(Ttime)) then insert(udamage(Ttime)).
+
+	% If the agent sees a location where an item can be picked up, then the agent store that location.
+	forall percept(pickup(UnrealID)) do insert(pickup(UnrealID)).
+	forall percept(not(pickup(UnrealID))) do delete(pickup(UnrealID)).
+
+	% If the agent sees an item in it's vicinity then the agent stores the information of the items and removes
+	% them from it's knowledge if the items is no longer seen by the agent.
+	forall percept(item(UnrealID,Label,ItemType,Position)) do insert(item(UnrealID,Label,ItemType,Position)).
+	forall percept(not(item(UnrealID,Label,ItemType,Position))) do delete(item(UnrealID,Label,ItemType,Position)).
 
 	% Updates the information of the powerup.
 	if bel(powerup(OldType,OldDuration)), percept(powerup(Type,Duration))
 		then delete(powerup(OldType,OldDuration)) + insert(powerup(Type,Duration)).
 
+	% If the agent has respawned before it could collect a health item, then the agent
+	% drops the goal as it's not neccessary anymore.
+	if goal(recover(Item,Destination)), bel(respawn) then drop(recover(Item,Destination)).
 	if bel(respawn) then delete(respawn).
 
 	% If the agent is stuck then resolve the situation by respawning the agent.
-	if bel(navigation(stuck,Destination)) then adopt(respawn).
+	if bel(navigation(stuck,Destination)), bel(navPoint(NewDestination)) then adopt(respawn)+ drop(at(Destination)) + adopt(at(NewDestination)).
 
 	% If the agent sees no path to a certain location then the agent drops the current goal and adopt another
 	% destination
 	if bel(navigation(noPath,Destination)), bel(navPoint(NewDestination)) then drop(at(Destination)) + adopt(at(NewDestination)).
 
+	% If another bot is seen by the agent then the agent store information about the other bot in it's belief base.
+	forall percept(bot(UnrealID,Name,Team,Position,Weapon,FireMode)) do insert(bot(UnrealID,Name,Team,Position,Weapon,FireMode)).
+	forall percept(not(bot(UnrealID,Name,Team,Position,Weapon,FireMode))) do delete(bot(UnrealID,Name,Team,Position,Weapon,FireMode)).
 
+	% If the agent's health reaches below 60 then the agent should prioritize healing itself.
+	if bel(status(Health,_,_,_), Health < 60), bel(pickup(Destination,_,Item), Item = 'medium_vial')then adopt(recover(Item,Destination)).
+	if bel(status(Health,_,_,_), Health < 60), bel(pickup(Destination,_,Item), Item = 'medium_health')then adopt(recover(Item,Destination)).
+	if bel(status(Health,_,_,_), Health < 60), bel(pickup(Destination,_,Item), Item = 'super_health')then adopt(recover(Item,Destination)).
+
+	% If the agent's health is over/equal to 90 then stop recovering health
+	forall goal(recover(Item,Destination)), bel(status(Health,_,_,_), Health>=90) do drop(recover(Item,Destination)).
+
+	% If the agent gets fragged before getting armor/ weapons or recovery items, then drop those goals.
+	forall goal(getArmor(Armor,ADestination)), bel(fragged(_,_,_,_)) do drop(getArmor(Armor,ADestination)).
+	forall goal(getWeapon(Weapon,WDestination)), bel(fragged(_,_,_,_)) do drop(getWeapon(Weapon,WDestination)).
+	forall goal(recover(Item,Destination)), bel(fragged(_,_,_,_)) do drop(recover(Item,Destination)).
+
+	% If the agent is killed then the agent stores the information of the killer.
+	if percept(fragged(Time,KillerID,VictimID,Weapon)), not(bel(fragged(Time,KillerID,VictimID,Weapon))) then insert(fragged(Time,KillerID,VictimID,Weapon)).
+	if bel(fragged(Time,KillerID,VictimID,Weapon)), not(percept(fragged(Time,KillerID,VictimID,Weapon))) then delete(fragged(Time,KillerID,VictimID,Weapon)).
+
+	% If the agent has no Vest equipment then it adopt the goal of getting a vest equipment.
+	if not(goal(getArmor(Vest,Destination))), bel(armor(Helmet,0,ThighPad,ShieldBelt)), bel(pickup(Destination,_,Vest), Vest = 'armor_vest') then adopt(getArmor(Vest,Destination)).
+	% If the agent has no ShieldBelt equipment then it adopt the goal of getting a ShieldBelt equipment.
+	if not(goal(getArmor(ShieldBelt,Destination))), bel(armor(Helmet,Vest,ThighPad,0)), bel(pickup(Destination,_,ShieldBelt), ShieldBelt = 'armor_shield_belt') then adopt(getArmor(ShieldBelt,Destination)).
+
+	% If the agent has no more ammo then get a weapon from a random location.
+	if bel(currentWeapon(Weapon,FireMode)), bel(weapon(Weapon,Ammo,AltAmmo), Ammo = 0), bel(pickup(Destination))
+		then adopt(getWeapon(Weapon,Destination)).
+
+	% If the agent has a deployable weapon then the agent wants to deploy it.
+	if bel(currentWeapon(Weapon,FireMode), Weapon = 'slow_volume') then adopt(deploy(Weapon)).
+	if bel(currentWeapon(Weapon,FireMode), Weapon = 'spidermine_trap') then adopt(deploy(Weapon)).
+	if bel(currentWeapon(Weapon,FireMode), Weapon = 'xray_volume') then adopt(deploy(Weapon)).
+	if bel(currentWeapon(Weapon,FireMode), Weapon = 'shaped_charge') then adopt(deploy(Weapon)).
+	if bel(currentWeapon(Weapon,FireMode), Weapon = 'link_generator') then adopt(deploy(Weapon)).
+	if bel(currentWeapon(Weapon,FireMode), Weapon = 'shield_charge') then adopt(deploy(Weapon)).
+
+	% If the agent sees a list of which area's are affected by the Slow Volume then insert then store
+	% them.
+	if percept(slowVolume(UnrealID)) then insert(slowVolume(UnrealID)).
+	if percept(not(slowVolume(UnrealID))) then delete(slowVolume(UnrealID)).
+
+	% If the agents sees a Slow Volume deployed then try to avoid the area's affected by it.
+	forall bel(pointInSlowVolume(UnrealID)), goal(at(UnrealID)) do drop(at(UnrealID)).
 }
