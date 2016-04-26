@@ -14,3 +14,9 @@ define respawn with
 define deploy with
 	pre{currentWeapon(Weapon,Firemode)}
 	post{true}
+
+% Deploy a weapon if it's deployable.
+define shoot(Target) with
+	pre{bot(UnrealID,Name,Team,Position,Weapon,FireMode)}
+	post{true}
+

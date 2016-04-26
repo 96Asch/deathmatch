@@ -27,6 +27,7 @@ module UTbotInit {
 	% Initially percept what the status is of the agent.
 	if percept(status(Health,Armour,Adrenaline,Combo)) then insert(status(Health,Armour,Adrenaline,Combo)).
 
+	% Initialize predicates.
 	if true then insert(currentWeapon(none,none)).
 	if true then insert(powerup(none,none)).
 	% Insert an initial score, which is all zeroes.

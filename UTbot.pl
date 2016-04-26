@@ -22,13 +22,16 @@ pickup/1,
 weapon/3,
 getWeapon/2,
 deploy/1,
-slowVolume/1.
+slowVolume/1,
+frag/1,
+follow/2,
+gotWeapon/1,
+gotItem/1,
+gotPowerup/1,
+gather/2.
 
 % We are at a certain location if the IDs match, or ...
 at(UnrealID) :- navigation(reached,UnrealID).
 % ... if the coordinates are approximately equal.
 at(location(X,Y,Z)) :- navigation(reached,location(X1,Y1,Z1)),
 	round(X) =:= round(X1), round(Y) =:= round(Y1), round(Z) =:= round(Z1).
-
-% Gives the location in the list of locations which are affected by the Slow Volume.
-pointInSlowVolume(UnrealID):- slowVolume(UnrealIDs), member(UnrealID,UnrealIDs).

@@ -72,17 +72,16 @@ module UTbotEvent {
 	forall percept(not(bot(UnrealID,Name,Team,Position,Weapon,FireMode))) do delete(bot(UnrealID,Name,Team,Position,Weapon,FireMode)).
 
 	% If the agent's health reaches below 60 then the agent should prioritize healing itself.
-	if bel(status(Health,_,_,_), Health < 60), bel(pickup(Destination,_,Item), Item = 'medium_vial')then adopt(recover(Item,Destination)).
-	if bel(status(Health,_,_,_), Health < 60), bel(pickup(Destination,_,Item), Item = 'medium_health')then adopt(recover(Item,Destination)).
-	if bel(status(Health,_,_,_), Health < 60), bel(pickup(Destination,_,Item), Item = 'super_health')then adopt(recover(Item,Destination)).
+	forall bel(pickup(Destination,'health',Item)), bel(status(Health,_,_,_), Health < 60) do adopt(recover(Item,Destination)).
 
 	% If the agent's health is over/equal to 90 then stop recovering health
 	forall goal(recover(Item,Destination)), bel(status(Health,_,_,_), Health>=90) do drop(recover(Item,Destination)).
 
 	% If the agent gets fragged before getting armor/ weapons or recovery items, then drop those goals.
 	forall goal(getArmor(Armor,ADestination)), bel(fragged(_,_,_,_)) do drop(getArmor(Armor,ADestination)).
-	forall goal(getWeapon(Weapon,WDestination)), bel(fragged(_,_,_,_)) do drop(getWeapon(Weapon,WDestination)).
+	if goal(deploy(Weapon)), bel(fragged(_,_,_,_)) then drop(deploy(Weapon)).
 	forall goal(recover(Item,Destination)), bel(fragged(_,_,_,_)) do drop(recover(Item,Destination)).
+	forall goal(gather(Item,Destination)), bel(fragged(_,_,_,_)) do drop(gather(Item,Destination)).
 
 	% If the agent is killed then the agent stores the information of the killer.
 	if percept(fragged(Time,KillerID,VictimID,Weapon)), not(bel(fragged(Time,KillerID,VictimID,Weapon))) then insert(fragged(Time,KillerID,VictimID,Weapon)).
@@ -93,23 +92,33 @@ module UTbotEvent {
 	% If the agent has no ShieldBelt equipment then it adopt the goal of getting a ShieldBelt equipment.
 	if not(goal(getArmor(ShieldBelt,Destination))), bel(armor(Helmet,Vest,ThighPad,0)), bel(pickup(Destination,_,ShieldBelt), ShieldBelt = 'armor_shield_belt') then adopt(getArmor(ShieldBelt,Destination)).
 
-	% If the agent has no more ammo then get a weapon from a random location.
-	if bel(currentWeapon(Weapon,FireMode)), bel(weapon(Weapon,Ammo,AltAmmo), Ammo = 0), bel(pickup(Destination))
-		then adopt(getWeapon(Weapon,Destination)).
+	% If the agent sees an item then the agent wants to collect it.
+	if bel(item(UnrealID,Label,ItemType,Position)) then adopt(gather(ItemType,Position)).
 
 	% If the agent has a deployable weapon then the agent wants to deploy it.
-	if bel(currentWeapon(Weapon,FireMode), Weapon = 'slow_volume') then adopt(deploy(Weapon)).
-	if bel(currentWeapon(Weapon,FireMode), Weapon = 'spidermine_trap') then adopt(deploy(Weapon)).
-	if bel(currentWeapon(Weapon,FireMode), Weapon = 'xray_volume') then adopt(deploy(Weapon)).
-	if bel(currentWeapon(Weapon,FireMode), Weapon = 'shaped_charge') then adopt(deploy(Weapon)).
-	if bel(currentWeapon(Weapon,FireMode), Weapon = 'link_generator') then adopt(deploy(Weapon)).
-	if bel(currentWeapon(Weapon,FireMode), Weapon = 'shield_charge') then adopt(deploy(Weapon)).
+	if bel(pickup(UnrealID,'deployable',Weapon)), bel(currentWeapon(Weapon,FireMode)) then adopt(deploy(Weapon)).
 
-	% If the agent sees a list of which area's are affected by the Slow Volume then insert then store
-	% them.
-	if percept(slowVolume(UnrealID)) then insert(slowVolume(UnrealID)).
-	if percept(not(slowVolume(UnrealID))) then delete(slowVolume(UnrealID)).
+	% If the agent sees another bot and that bot is not on the same team as the agent then the agent believes that
+	% it needs to shoot the bot.
+	if bel((bot(OtherUnrealID,_,OtherTeam,_,_,_),self(UnrealID,_,Team), OtherUnrealID \= UnrealID, OtherTeam \= Team))
+		then insert(frag(OtherUnrealID)).
 
-	% If the agents sees a Slow Volume deployed then try to avoid the area's affected by it.
-	forall bel(pointInSlowVolume(UnrealID)), goal(at(UnrealID)) do drop(at(UnrealID)).
+	% If the agent is in no team then shoot every other bot it sees.
+	if bel(bot(OtherUnrealID,_,OtherTeam,_,_,_),self(UnrealID,_,Team), OtherUnrealID \= UnrealID)
+		then insert(frag(OtherUnrealID)).
+	if bel(not(bot(OtherUnrealID,Name,OtherTeam,Position,Weapon,FireMode))), bel(frag(OtherUnrealID))
+		then delete(frag(OtherUnrealID)).
+
+	% If the agent has the goal to shoot another bot, then actively go to the other bot's location.
+	if bel(frag(UnrealID)), not(goal((follow(UnrealID,Position)))), bel(bot(UnrealID,Name,OtherTeam,Position,Weapon,FireMode)) then adopt(follow(UnrealID,Position)).
+	if goal(follow(UnrealID,OldPosition)), bel(bot(UnrealID,Name,OtherTeam,Position,Weapon,FireMode))
+		then drop(follow(UnrealID,OldPosition)) + adopt(follow(UnrealID,Position)).
+	if bel(not(bot(UnrealID,Name,OtherTeam,Position,Weapon,FireMode))), goal(follow(UnrealID,Position)) then drop(follow(UnrealID,Position)).
+
+
+
+	% Record which items the agent has obtained (for testing purposes)
+	forall bel(weapon(Weapon,_,_)), not(bel(gotWeapon(Weapon))) do insert(gotWeapon(Weapon)).
+	if bel(powerup(Type,Duration), Type \= 'none'), not(bel(gotPowerup(Type))) then insert(gotPowerup(Type)).
+
 }

@@ -3,17 +3,20 @@ use UTbot as actionspec.
 
 module UTbotMain {
 
+	% If we want to follow a bot then go to their last known location and shoot.
+	if goal(follow(UnrealID,Destination)) then navigate(Destination) + shoot(UnrealID).
+
 	% If we need a certain piece of equipment then we go to a navpoint that has that piece of equipment.
 	if goal(getArmor(ArmorPiece,Destination)) then navigate(Destination) + insert(getArmor(ArmorPiece,Destination)).
 
 	% If we want to recover ourselves then we go to a navpoint with a healing item.
-	if goal(recover(Item,Destination)) then navigate(Destination).
+	if goal(recover(Item,Destination)) then navigate(Destination) + drop(recover(Item,Destination)) +insert(gotItem(Item)).
 
 	% If we have a weapon to deploy then deploy it.
 	if goal(deploy(Weapon)) then deploy + drop(deploy(Weapon)).
 
-	% If we want to get a new weapon then we go to a navpoint with weapons
-	if goal(getWeapon(Weapon,Destination)) then navigate(Destination) + insert(getWeapon(Weapon,Destination)).
+	% If we see an item in our vicinity then collect that item.
+	if goal(gather(Item,Destination)) then navigate(Destination) + drop(gather(Item,Destination)).
 
 	% Try to go to our destination if we want to be there.
 	if goal(at(Destination)) then navigate(Destination).
