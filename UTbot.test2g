@@ -1,0 +1,69 @@
+use UTbot as mas.
+use UTbot as module.
+use UTbot as knowledge.
+
+test MASbot with
+	pre{ }
+	in {
+		% SELF PERCEPT TESTS
+		
+		% Send on change
+		percept(orientation(Location, Rotation, Velocity)) leadsto bel(orientation(Location, Rotation, Velocity)).
+		percept(orientation(Location, Rotation, Velocity)), bel(orientation(OLocation, ORotation, OVelocity)),
+		 	Location \= OLocation, Rotation \= ORotation, Velocity \= OVelocity
+			leadsto bel(not(orientation(Location, Rotation, Velocity))).
+		
+		% Send on change
+		percept(status(Health, Armour)) leadsto bel(status(Health, Armour)).
+		percept(status(Health, Armour)), bel(percept(status(OHealth, OArmour)),
+			(Health \= OHealth; Armour \= OArmour)
+			leadsto bel(not(status(OHealth, OArmour))).
+		
+		% Send on change
+		percept(currentWeapon(WeaponTypes, FireMode)) leadsto bel(currentWeapon(WeaponTypes, FireMode)).
+		percept(currentWeapon(WeaponTypes, FireMode)), bel(currentWeapon(OWeaponTypes, OFireMode)),
+			(WeaponTypes \= OWeaponTypes; FireMode \= OFireMode)
+			leadsto bel(not(currentWeapon(OWeaponTypes, OFireMode))).
+		
+		% Send on change with negation
+		percept(weapon(WeaponType, Ammo, AltAmmo)) leadsto bel(weapon(WeaponType, Ammo, AltAmmo)).
+		percept(not(weapon(WeaponType, Ammo, AltAmmo))), bel(weapon(WeaponType, Ammo, AltAmmo)) leadsto
+			bel(not(weapon(WeaponType, Ammo, AltAmmo))).
+		
+		% Send on change
+		percept(powerup(Type, Duration)) leadsto bel(powerup(Type, Duration)).
+		percept(powerup(Type, Duration)), bel(powerup(OType, ODuration)),
+			(Type \= OType; Duration \= ODuration)
+			leadsto bel(not(powerup(Type, Duration))).
+		
+		% Send on change
+		percept(armor(Helmet, Vest, Thighpad, Shieldbelt)) leadsto bel(armor(Helmet, Vest, Thighpad, Shieldbelt)).
+		percept(armor(Helmet, Vest, Thighpad, Shieldbelt)), bel(armor(OHelmet, OVest, OThighpad, OShieldbelt)),
+			(Helmet \= OHelmet; Vest \= OVest; Shieldbelt \= OShieldbelt; Thighpad \= OThighpad)
+			leadto(not(armor(OHelmet, OVest, OThighpad, OShieldbelt)))
+			
+		% ACTION PERCEPT TESTS
+		
+		% fragged(Time,KillerID,VictimID,WeaponType) - Send Always
+		percept(fragged(Time,KillerID,VictimID,WeaponType)) leadsto bel(fragged(Time,KillerID,VictimID,WeaponType)).
+		bel(fragged(Time,KillerID,VictimID,WeaponType)) never not(bel(fragged(Time,KillerID,VictimID,WeaponType))).
+		
+		
+		% navigation(State,Destination) - Send On Change	
+		percept(navigation(State,Destination)) leadsto bel(navigation(State,Destination).
+		percept(navigation(State,Destination)), bel(navigation(OldState,OldDestination)),
+			(State \= OldState, Destination \= OldDestination)
+			leadsto bel(not(navigation(State,Destination))).	
+			
+			
+		% path(StartID,EndID,Length,Location) - Send On Change	
+		percept(path(StartID,EndID,Length,Location)) leadsto bel(path(StartID,EndID,Length,Location)).
+		percept(path(StartID,EndID,Length,Location)), bel(path(OldStartID,OldEndID,OldLength,OldLocation)),
+			(StartID \= OldStartID, EndID \= OldEndID, Length \= OldLength, Location \= OldLocation)
+			leadsto bel(not(path(StartID,EndID,Length,Location))).			
+	}
+	post{ }
+
+MASbots {
+	do UTbot.
+}
